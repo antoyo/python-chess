@@ -913,6 +913,12 @@ class SingleBughouseBoard(CrazyhouseBoard):
         """
         return super().is_checkmate()
 
+    def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+        board_index = self.board_index
+        for move in super().generate_legal_moves(from_mask, to_mask):
+            move.board_id = board_index
+            yield move
+
     @property
     def _other_board(self):
         return self._bughouse_boards[int(self._bughouse_boards[0] is self)]
