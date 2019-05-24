@@ -886,12 +886,15 @@ class SingleBughouseBoard(CrazyhouseBoard):
         pockets = self.pockets
         move = super().pop()
         captured_piece = self.piece_at(move.to_square)
-        if captured_piece is not None and captured_piece.color != self.turn:
-            if self._other_board.pockets[not self.turn] == 0:
+        if captured_piece is not None:
+            partner_pocket = self._other_board.pockets[captured_piece.color]
+            was_promoted = bool(self.promoted & move.to_square)
+            piece_type = captured_piece.piece_type if not was_promoted else chess.PAWN
+            if partner_pocket.count(piece_type) == 0:
                 raise ValueError("Cannot undo move, please undo move on other bord first.")
-            self._other_board.pockets[not self.turn] -= 1
+            partner_pocket.remove(piece_type)
         if move.drop is not None:
-            pockets[self.turn][move.drop] += 1
+            pockets[self.turn].add(move.drop)
         return move
 
     def is_checkmate(self) -> bool:
@@ -987,11 +990,13 @@ class BughouseBoards:
             move = self._move_stack.pop()
         else:
             # Latest move on the specified board
-            last_occurrence_index = next(
-                i for i, m in reversed(enumerate(self._move_stack)) if m.board_index == board_index)
+            last_occurrence_index = len(self._move_stack) - 1
+            while last_occurrence_index > 0 and self._move_stack[last_occurrence_index].board_id != board_index:
+                last_occurrence_index -= 1
+            assert last_occurrence_index >= 0, "No move left on board"
             move = self._move_stack[last_occurrence_index]
             self._move_stack[last_occurrence_index:last_occurrence_index + 1] = []
-        self._boards[move.board_id].pop()
+        self._boards[move.board_id]._pop()
         return move
 
     def peek(self) -> Optional[chess.Move]:
