@@ -919,6 +919,11 @@ class SingleBughouseBoard(CrazyhouseBoard):
             move.board_id = board_index
             yield move
 
+    def parse_san(self, san: str) -> chess.Move:
+        move = super().parse_san(san)
+        move.board_id = self.board_index
+        return move
+
     @property
     def _other_board(self):
         return self._bughouse_boards[int(self._bughouse_boards[0] is self)]
@@ -953,6 +958,7 @@ class BughouseBoards:
         self._boards: Optional[Tuple[SingleBughouseBoard, SingleBughouseBoard]] = None
         self.fen = fen
         self._move_stack: List[chess.Move] = []
+        self.chess960 = chess960
 
     def reset_boards(self) -> None:
         for b in self._boards:
@@ -1075,6 +1081,17 @@ class BughouseBoards:
         # Undetermined.
         return "*"
 
+    def parse_san(self, san: str) -> chess.Move:
+        print(san)
+        if san[0].lower() == "a":
+            return self._boards[LEFT].parse_san(san[3:])
+        return self._boards[RIGHT].parse_san(san[3:])
+
+    def is_chess960(self):
+        return self.chess960
+
+    def has_chess960_castling_rights(self):
+        return self.chess960
 
 VARIANTS = [
     chess.Board,

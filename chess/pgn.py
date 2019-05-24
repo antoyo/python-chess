@@ -24,12 +24,11 @@ import weakref
 import typing
 
 import chess
-
-from typing import Callable, Dict, Generic, Iterable, Iterator, List, Mapping, MutableMapping, Set, TextIO, Tuple, Type, TypeVar, Optional, Union
-
+from chess.variant import BughouseBoards
+from typing import Callable, Dict, Generic, Iterable, Iterator, List, Mapping, MutableMapping, Set, TextIO, Tuple, Type, \
+    TypeVar, Optional, Union
 
 LOGGER = logging.getLogger(__name__)
-
 
 # Reference of Numeric Annotation Glyphs (NAGs):
 # https://en.wikipedia.org/wiki/Numeric_Annotation_Glyphs
@@ -82,19 +81,17 @@ NAG_BLACK_SEVERE_TIME_PRESSURE = 139
 
 NAG_NOVELTY = 146
 
-
 TAG_REGEX = re.compile(r"^\[([A-Za-z0-9_]+)\s+\"(.*)\"\]\s*$")
 
 TAG_NAME_REGEX = re.compile(r"^[A-Za-z0-9_]+\Z")
 
 MOVETEXT_REGEX = re.compile(r"""
-    (
-        [NBKRQ]?[a-h]?[1-8]?[\-x]?[a-h][1-8](?:=?[nbrqkNBRQK])?
-        |[PNBRQK]?@[a-h][1-8]
-        |--
-        |Z0
-        |O-O(?:-O)?
-        |0-0(?:-0)?
+        (([ABab]\.\s)?[NBKRQ]?[a-h]?[1-8]?[\-x]?[a-h][1-8](?:=?[nbrqkNBRQK])?
+        |([ABab]\.\s)?[PNBRQK]?@[a-h][1-8]
+        |([ABab]\.\s)?--
+        |([ABab]\.\s)?Z0
+        |([ABab]\.\s)?O-O(?:-O)?
+        |([ABab]\.\s)?0-0(?:-0)?
     )
     |(\{.*)
     |(;.*)
@@ -108,13 +105,14 @@ MOVETEXT_REGEX = re.compile(r"""
 SKIP_MOVETEXT_REGEX = re.compile(r""";|\{|\}""")
 
 TAG_ROSTER = ["Event", "Site", "Date", "Round", "White", "Black", "Result"]
-
+TAG_ROSTER_BUG = ["Event", "Site", "Date", "Round", "Result", "WhiteA", "WhiteB", "BlackA", "BlackB", "WhiteAElo",
+                  "WhiteBElo", "BlackAElo", "BlackBElo", "TimeControl", "Lag"]
 
 class SkipType(enum.Enum):
     SKIP = None
 
-SKIP = SkipType.SKIP
 
+SKIP = SkipType.SKIP
 
 ResultT = TypeVar("ResultT")
 GameBuilderResultT = TypeVar("GameBuilderResultT", bound="Game")
@@ -278,7 +276,8 @@ class GameNode:
         """Removes a variation."""
         self.variations.remove(self.variation(move))
 
-    def add_variation(self, move: chess.Move, *, comment: str = "", starting_comment: str = "", nags: Iterable[int] = ()) -> "GameNode":
+    def add_variation(self, move: chess.Move, *, comment: str = "", starting_comment: str = "",
+                      nags: Iterable[int] = ()) -> "GameNode":
         """Creates a child node with the given attributes."""
         node = type(self).dangling_node()
         node.move = move
@@ -308,7 +307,8 @@ class GameNode:
         """Returns an iterator over the main moves after this node."""
         return Mainline(self, lambda node: node.move)
 
-    def add_line(self, moves: Iterable[chess.Move], *, comment: str = "", starting_comment: str = "", nags: Iterable[int] = ()) -> "GameNode":
+    def add_line(self, moves: Iterable[chess.Move], *, comment: str = "", starting_comment: str = "",
+                 nags: Iterable[int] = ()) -> "GameNode":
         """
         Creates a sequence of child nodes for the given list of moves.
         Adds *comment* and *nags* to the last node of the line and returns it.
@@ -417,6 +417,7 @@ class GameNode:
 
 GameT = TypeVar("GameT", bound="Game")
 
+
 class Game(GameNode):
     """
     The root node of a game with extra information such as headers and the
@@ -523,8 +524,10 @@ class Game(GameNode):
 
 HeadersT = TypeVar("HeadersT", bound="Headers")
 
+
 class Headers(MutableMapping[str, str]):
-    def __init__(self, data: Optional[Union[Mapping[str, str], Iterable[Tuple[str, str]]]] = None, **kwargs: str) -> None:
+    def __init__(self, data: Optional[Union[Mapping[str, str], Iterable[Tuple[str, str]]]] = None,
+                 **kwargs: str) -> None:
         self._tag_roster = {}  # type: Dict[str, str]
         self._others = {}  # type: Dict[str, str]
 
@@ -556,14 +559,14 @@ class Headers(MutableMapping[str, str]):
             "wild/0", "wild/1", "wild/2", "wild/3", "wild/4", "wild/5",
             "wild/6", "wild/7", "wild/8", "wild/8a"]
 
-    def variant(self) -> Type[chess.Board]:
+    def variant(self) -> Type[Union[chess.Board, BughouseBoards]]:
         if "Variant" not in self or self.is_chess960() or self.is_wild():
             return chess.Board
         else:
             from chess.variant import find_variant
             return find_variant(self["Variant"])
 
-    def board(self) -> chess.Board:
+    def board(self) -> Union[chess.Board,BughouseBoards]:
         VariantBoard = self.variant()
         fen = self.get("FEN", VariantBoard.starting_fen)
         board = VariantBoard(fen, chess960=self.is_chess960())
@@ -619,6 +622,7 @@ class Headers(MutableMapping[str, str]):
 
 
 MainlineMapT = TypeVar("MainlineMapT")
+
 
 class Mainline(Generic[MainlineMapT]):
     def __init__(self, start: GameNode, f: Callable[[GameNode], MainlineMapT]) -> None:
@@ -678,7 +682,8 @@ class ReverseMainline(Generic[MainlineMapT]):
         return Mainline(self.stop, self.f)
 
     def __repr__(self) -> str:
-        return "<ReverseMainline at {:#x} ({})>".format(id(self), " ".join(ReverseMainline(self.stop, lambda node: node.move.uci())))
+        return "<ReverseMainline at {:#x} ({})>".format(id(self), " ".join(
+            ReverseMainline(self.stop, lambda node: node.move.uci())))
 
 
 class BaseVisitor(Generic[ResultT]):
@@ -707,7 +712,7 @@ class BaseVisitor(Generic[ResultT]):
         """Called after visiting game headers."""
         pass
 
-    def parse_san(self, board: chess.Board, san: str) -> chess.Move:
+    def parse_san(self, board: Union[chess.Board, BughouseBoards], san: str) -> chess.Move:
         """
         When the visitor is used by a parser, this is called to parse a move
         in standard algebraic notation.
@@ -720,7 +725,6 @@ class BaseVisitor(Generic[ResultT]):
             san = "O-O"
         elif san == "0-0-0":
             san = "O-O-O"
-
         return board.parse_san(san)
 
     def visit_move(self, board: chess.Board, move: chess.Move) -> None:
@@ -820,6 +824,9 @@ class GameBuilder(BaseVisitor[Game]):
             # starts before any move.
             new_comment = [self.variation_stack[-1].comment, comment]
             self.variation_stack[-1].comment = "\n".join(new_comment).strip()
+        
+            if self.game.headers.variant() == BughouseBoards and self.variation_stack[-1].move is not None:
+                self.variation_stack[-1].move.move_time = float([c for c in new_comment if len(c) > 0][0].strip().split()[0])
         else:
             # Otherwise, it is a starting comment.
             new_comment = [self.starting_comment, comment]
@@ -921,7 +928,8 @@ class StringExporter(BaseVisitor[str]):
     There will be no newline characters at the end of the string.
     """
 
-    def __init__(self, *, columns: Optional[int] = 80, headers: bool = True, comments: bool = True, variations: bool = True):
+    def __init__(self, *, columns: Optional[int] = 80, headers: bool = True, comments: bool = True,
+                 variations: bool = True):
         self.columns = columns
         self.headers = headers
         self.comments = comments
@@ -1033,7 +1041,8 @@ class FileExporter(StringExporter):
     >>> game.accept(exporter)
     """
 
-    def __init__(self, handle: TextIO, *, columns: Optional[int] = 80, headers: bool = True, comments: bool = True, variations: bool = True):
+    def __init__(self, handle: TextIO, *, columns: Optional[int] = 80, headers: bool = True, comments: bool = True,
+                 variations: bool = True):
         super().__init__(columns=columns, headers=headers, comments=comments, variations=variations)
         self.handle = handle
 
@@ -1109,7 +1118,9 @@ def read_game(handle: TextIO, *, Visitor: Callable[[], BaseVisitor[ResultT]] = G
     Returns the parsed game or ``None`` if the end of file is reached.
     """
     visitor = Visitor()
-
+    # checks if file is bughouse(.bgpn) file
+    bgpnpattern = re.compile(r'/(.*)+(\.bpgn)$')
+    is_bughouse = re.match(bgpnpattern, handle.name)
     found_game = False
     skipping_game = False
     headers = None
@@ -1164,6 +1175,9 @@ def read_game(handle: TextIO, *, Visitor: Callable[[], BaseVisitor[ResultT]] = G
     if not skipping_game:
         # Chess variant.
         headers = managed_headers if headers is None else headers
+
+        if is_bughouse:
+            headers['Variant'] = 'Bughouse'
         try:
             VariantBoard = headers.variant()
         except ValueError as error:
@@ -1220,7 +1234,6 @@ def read_game(handle: TextIO, *, Visitor: Callable[[], BaseVisitor[ResultT]] = G
         if line.isspace():
             visitor.end_game()
             return visitor.result()
-
         for match in MOVETEXT_REGEX.finditer(line):
             token = match.group(0)
 
