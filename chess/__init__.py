@@ -493,7 +493,10 @@ class Move:
         return "Move.from_uci({!r})".format(self.uci())
 
     def __str__(self) -> str:
-        return self.uci()
+        if self.board_id is None:
+            return self.uci()
+        else:
+            return "B{} {}".format(self.board_id + 1, self.uci())
 
     def __hash__(self) -> int:
         return hash((self.to_square, self.from_square, self.promotion, self.drop))
