@@ -886,12 +886,15 @@ class SingleBughouseBoard(CrazyhouseBoard):
         pockets = self.pockets
         move = super().pop()
         captured_piece = self.piece_at(move.to_square)
-        if captured_piece is not None and captured_piece.color != self.turn:
-            if self._other_board.pockets[not self.turn].count(captured_piece.piece_type) == 0:
+        if captured_piece is not None:
+            partner_pocket = self._other_board.pockets[captured_piece.color]
+            was_promoted = bool(self.promoted & move.to_square)
+            piece_type = captured_piece.piece_type if not was_promoted else chess.PAWN
+            if partner_pocket.count(piece_type) == 0:
                 raise ValueError("Cannot undo move, please undo move on other bord first.")
-            self._other_board.pockets[not self.turn].remove(captured_piece.piece_type)
+            partner_pocket.remove(piece_type)
         if move.drop is not None:
-            pockets[self.turn][move.drop] += 1
+            pockets[self.turn].add(move.drop)
         return move
 
     def is_checkmate(self) -> bool:
