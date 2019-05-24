@@ -502,10 +502,10 @@ class Move:
             return "B{} {}".format(self.board_id + 1, self.uci())
 
     def __hash__(self) -> int:
-        return hash((self.to_square, self.from_square, self.promotion, self.drop))
+        return hash((self.to_square, self.from_square, self.promotion, self.drop, self.board_id, self.move_time))
 
     def __copy__(self) -> "Move":
-        return type(self)(self.from_square, self.to_square, self.promotion, self.drop)
+        return type(self)(self.from_square, self.to_square, self.promotion, self.drop, self.board_id, self.move_time)
 
     def __deepcopy__(self, memo: Dict[int, object]) -> "Move":
         move = self.__copy__()
