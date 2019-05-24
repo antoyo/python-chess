@@ -884,7 +884,11 @@ class SingleBughouseBoard(CrazyhouseBoard):
 
     def _pop(self) -> chess.Move:
         pockets = self.pockets
-        move = super().pop()
+        move = self.move_stack.pop()
+        # "Hacky" is an understatement for what is going on in this line
+        # We need this in order to avoid that the pockets will be restored
+        super(_CrazyhouseBoardState, self._stack.pop()).restore(self)
+        self._transposition_counter[self._transposition_key()] -= 1
         captured_piece = self.piece_at(move.to_square)
         if captured_piece is not None:
             partner_pocket = self._other_board.pockets[captured_piece.color]
@@ -991,7 +995,7 @@ class BughouseBoards:
         else:
             # Latest move on the specified board
             last_occurrence_index = len(self._move_stack) - 1
-            while last_occurrence_index > 0 and self._move_stack[last_occurrence_index].board_id != board_index:
+            while last_occurrence_index >= 0 and self._move_stack[last_occurrence_index].board_id != board_index:
                 last_occurrence_index -= 1
             assert last_occurrence_index >= 0, "No move left on board"
             move = self._move_stack[last_occurrence_index]
@@ -1039,7 +1043,7 @@ class BughouseBoards:
     def boards(self) -> Tuple[SingleBughouseBoard, SingleBughouseBoard]:
         return self._boards
 
-    def __getitem__(self, value: int):
+    def __getitem__(self, value: int) -> SingleBughouseBoard:
         return self._boards[value]
 
     def _repr_svg_(self):
