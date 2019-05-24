@@ -1082,16 +1082,18 @@ class BughouseBoards:
         return "*"
 
     def parse_san(self, san: str) -> chess.Move:
-        print(san)
         if san[0].lower() == "a":
             return self._boards[LEFT].parse_san(san[3:])
         return self._boards[RIGHT].parse_san(san[3:])
 
-    def is_chess960(self):
+    def is_chess960(self) -> bool:
         return self.chess960
 
-    def has_chess960_castling_rights(self):
+    def has_chess960_castling_rights(self) -> bool:
         return self.chess960
+
+    def fullmove_number(self) -> int:
+        return self.boards[0].fullmove_number + self.boards[1].fullmove_number
 
 VARIANTS = [
     chess.Board,
