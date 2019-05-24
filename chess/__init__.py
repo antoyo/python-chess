@@ -485,7 +485,10 @@ class Move:
                 self.from_square == other.from_square and
                 self.to_square == other.to_square and
                 self.promotion == other.promotion and
-                self.drop == other.drop)
+                self.drop == other.drop and
+                self.board_id == other.board_id and
+                self.move_time == other.move_time
+            )
         else:
             return NotImplemented
 
