@@ -888,7 +888,7 @@ class SingleBughouseBoard(CrazyhouseBoard):
         captured_piece = self.piece_at(move.to_square)
         if captured_piece is not None:
             partner_pocket = self._other_board.pockets[captured_piece.color]
-            was_promoted = bool(self.promoted & move.to_square)
+            was_promoted = bool(self.promoted & chess.BB_SQUARES[move.to_square])
             piece_type = captured_piece.piece_type if not was_promoted else chess.PAWN
             if partner_pocket.count(piece_type) == 0:
                 raise ValueError("Cannot undo move, please undo move on other bord first.")
