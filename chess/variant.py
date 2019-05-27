@@ -977,7 +977,7 @@ class BughouseBoards:
 
     @property
     def fen(self) -> str:
-        return "{} | {}".format(self._boards[LEFT].board_fen(), self._boards[RIGHT].board_fen())
+        return "{} | {}".format(self._boards[LEFT].fen(), self._boards[RIGHT].fen())
 
     @fen.setter
     def fen(self, value: str):
