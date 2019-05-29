@@ -21,12 +21,11 @@ import itertools
 import logging
 import re
 import weakref
-import typing
+from typing import Callable, Dict, Generic, Iterable, Iterator, List, Mapping, MutableMapping, Set, TextIO, Tuple, Type, \
+    TypeVar, Optional, Union
 
 import chess
 from chess.variant import BughouseBoards
-from typing import Callable, Dict, Generic, Iterable, Iterator, List, Mapping, MutableMapping, Set, TextIO, Tuple, Type, \
-    TypeVar, Optional, Union
 
 LOGGER = logging.getLogger(__name__)
 
@@ -105,8 +104,7 @@ MOVETEXT_REGEX = re.compile(r"""
 SKIP_MOVETEXT_REGEX = re.compile(r""";|\{|\}""")
 
 TAG_ROSTER = ["Event", "Site", "Date", "Round", "White", "Black", "Result"]
-TAG_ROSTER_BUG = ["Event", "Site", "Date", "Round", "Result", "WhiteA", "WhiteB", "BlackA", "BlackB", "WhiteAElo",
-                  "WhiteBElo", "BlackAElo", "BlackBElo", "TimeControl", "Lag"]
+
 
 class SkipType(enum.Enum):
     SKIP = None
@@ -127,7 +125,6 @@ class GameNode:
         self.nags = set()  # type: Set[int]
         self.starting_comment = ""
         self.comment = ""
-
         self.board_cached = None  # type: Optional[weakref.ref[chess.Board]]
 
     @classmethod
@@ -566,7 +563,7 @@ class Headers(MutableMapping[str, str]):
             from chess.variant import find_variant
             return find_variant(self["Variant"])
 
-    def board(self) -> Union[chess.Board,BughouseBoards]:
+    def board(self) -> Union[chess.Board, BughouseBoards]:
         VariantBoard = self.variant()
         fen = self.get("FEN", VariantBoard.starting_fen)
         board = VariantBoard(fen, chess960=self.is_chess960())
@@ -824,9 +821,10 @@ class GameBuilder(BaseVisitor[Game]):
             # starts before any move.
             new_comment = [self.variation_stack[-1].comment, comment]
             self.variation_stack[-1].comment = "\n".join(new_comment).strip()
-        
+
             if self.game.headers.variant() == BughouseBoards and self.variation_stack[-1].move is not None:
-                self.variation_stack[-1].move.move_time = float([c for c in new_comment if len(c) > 0][0].strip().split()[0])
+                self.variation_stack[-1].move.move_time = float(
+                    [c for c in new_comment if len(c) > 0][0].strip().split()[0])
         else:
             # Otherwise, it is a starting comment.
             new_comment = [self.starting_comment, comment]
@@ -1119,8 +1117,7 @@ def read_game(handle: TextIO, *, Visitor: Callable[[], BaseVisitor[ResultT]] = G
     """
     visitor = Visitor()
     # checks if file is bughouse(.bgpn) file
-    bgpnpattern = re.compile(r'/(.*)+(\.bpgn)$')
-    is_bughouse = re.match(bgpnpattern, handle.name)
+    is_bughouse = handle.name.endswith(".bpgn")
     found_game = False
     skipping_game = False
     headers = None
