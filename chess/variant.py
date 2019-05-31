@@ -26,7 +26,6 @@ from typing import Dict, Generic, Hashable, Iterable, Iterator, List, Optional, 
 
 
 class SuicideBoard(chess.Board):
-
     aliases = ["Suicide", "Suicide chess"]
     uci_variant = "suicide"
     xboard_variant = "suicide"
@@ -98,7 +97,8 @@ class SuicideBoard(chess.Board):
         they_all_on_light = not (self.occupied_co[not color] & chess.BB_DARK_SQUARES)
         return (we_some_on_light and they_all_on_dark) or (we_some_on_dark and they_all_on_light)
 
-    def generate_pseudo_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+    def generate_pseudo_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL,
+                                    to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
         for move in super().generate_pseudo_legal_moves(from_mask, to_mask):
             # Add king promotions.
             if move.promotion == chess.QUEEN:
@@ -106,7 +106,8 @@ class SuicideBoard(chess.Board):
 
             yield move
 
-    def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+    def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> \
+    Iterator[chess.Move]:
         if self.is_variant_end():
             return
 
@@ -154,7 +155,6 @@ class SuicideBoard(chess.Board):
 
 
 class GiveawayBoard(SuicideBoard):
-
     aliases = ["Giveaway", "Giveaway chess", "Anti", "Antichess", "Anti chess"]
     uci_variant = "giveaway"
     xboard_variant = "giveaway"
@@ -187,7 +187,6 @@ class GiveawayBoard(SuicideBoard):
 
 
 class AtomicBoard(chess.Board):
-
     aliases = ["Atomic", "Atom", "Atomic chess"]
     uci_variant = "atomic"
     xboard_variant = "atomic"
@@ -261,7 +260,8 @@ class AtomicBoard(chess.Board):
         black_kings = self.kings & self.occupied_co[chess.BLACK]
         return any(chess.BB_KING_ATTACKS[sq] & black_kings for sq in chess.scan_forward(white_kings))
 
-    def _push_capture(self, move: chess.Move, capture_square: chess.Square, piece_type: chess.PieceType, was_promoted: bool) -> None:
+    def _push_capture(self, move: chess.Move, capture_square: chess.Square, piece_type: chess.PieceType,
+                      was_promoted: bool) -> None:
         # Explode the capturing piece.
         self._remove_piece_at(move.to_square)
 
@@ -301,7 +301,8 @@ class AtomicBoard(chess.Board):
     def is_stalemate(self) -> bool:
         return not self.is_variant_loss() and super().is_stalemate()
 
-    def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+    def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> \
+    Iterator[chess.Move]:
         for move in self.generate_pseudo_legal_moves(from_mask, to_mask):
             if self.is_legal(move):
                 yield move
@@ -317,7 +318,6 @@ class AtomicBoard(chess.Board):
 
 
 class KingOfTheHillBoard(chess.Board):
-
     aliases = ["King of the Hill", "KOTH"]
     uci_variant = "kingofthehill"
     xboard_variant = "kingofthehill"  # Unofficial
@@ -341,7 +341,6 @@ class KingOfTheHillBoard(chess.Board):
 
 
 class RacingKingsBoard(chess.Board):
-
     aliases = ["Racing Kings", "Racing", "Race", "racingkings"]
     uci_variant = "racingkings"
     xboard_variant = "racingkings"  # Unofficial
@@ -367,7 +366,8 @@ class RacingKingsBoard(chess.Board):
     def is_legal(self, move: chess.Move) -> bool:
         return super().is_legal(move) and not self._gives_check(move)
 
-    def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+    def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> \
+    Iterator[chess.Move]:
         for move in super().generate_legal_moves(from_mask, to_mask):
             if not self._gives_check(move):
                 yield move
@@ -425,7 +425,6 @@ class RacingKingsBoard(chess.Board):
 
 
 class HordeBoard(chess.Board):
-
     aliases = ["Horde", "Horde chess"]
     uci_variant = "horde"
     xboard_variant = "horde"  # Unofficial
@@ -477,6 +476,7 @@ class HordeBoard(chess.Board):
 
 ThreeCheckBoardT = TypeVar("ThreeCheckBoardT", bound="ThreeCheckBoard")
 
+
 class _ThreeCheckBoardState(Generic[ThreeCheckBoardT], chess._BoardState["ThreeCheckBoardT"]):
     def __init__(self, board: "ThreeCheckBoardT") -> None:
         super().__init__(board)
@@ -488,8 +488,8 @@ class _ThreeCheckBoardState(Generic[ThreeCheckBoardT], chess._BoardState["ThreeC
         board.remaining_checks[chess.WHITE] = self.remaining_checks_w
         board.remaining_checks[chess.BLACK] = self.remaining_checks_b
 
-class ThreeCheckBoard(chess.Board):
 
+class ThreeCheckBoard(chess.Board):
     aliases = ["Three-check", "Three check", "Threecheck", "Three check chess"]
     uci_variant = "3check"
     xboard_variant = "3check"
@@ -566,7 +566,8 @@ class ThreeCheckBoard(chess.Board):
         self.remaining_checks[chess.WHITE] = wc
         self.remaining_checks[chess.BLACK] = bc
 
-    def epd(self, shredder: bool = False, en_passant: str = "legal", promoted: Optional[bool] = None, **operations: Union[None, str, int, float, chess.Move, Iterable[chess.Move]]) -> str:
+    def epd(self, shredder: bool = False, en_passant: str = "legal", promoted: Optional[bool] = None,
+            **operations: Union[None, str, int, float, chess.Move, Iterable[chess.Move]]) -> str:
         epd = [super().epd(shredder=shredder, en_passant=en_passant, promoted=promoted),
                "{:d}+{:d}".format(max(self.remaining_checks[chess.WHITE], 0),
                                   max(self.remaining_checks[chess.BLACK], 0))]
@@ -612,6 +613,7 @@ class ThreeCheckBoard(chess.Board):
 
 
 CrazyhouseBoardT = TypeVar("CrazyhouseBoardT", bound="CrazyhouseBoard")
+
 
 class _CrazyhouseBoardState(Generic[CrazyhouseBoardT], chess._BoardState["CrazyhouseBoardT"]):
     def __init__(self, board: "CrazyhouseBoardT") -> None:
@@ -669,8 +671,8 @@ class CrazyhousePocket:
     def color(self) -> bool:
         return self._color
 
-class CrazyhouseBoard(chess.Board):
 
+class CrazyhouseBoard(chess.Board):
     aliases = ["Crazyhouse", "Crazy House", "House", "ZH"]
     uci_variant = "crazyhouse"
     xboard_variant = "crazyhouse"
@@ -703,7 +705,8 @@ class CrazyhouseBoard(chess.Board):
         if move.drop:
             self.pockets[not self.turn].remove(move.drop)
 
-    def _push_capture(self, move: chess.Move, capture_square: chess.Square, piece_type: chess.PieceType, was_promoted: bool) -> None:
+    def _push_capture(self, move: chess.Move, capture_square: chess.Square, piece_type: chess.PieceType,
+                      was_promoted: bool) -> None:
         if was_promoted:
             self.pockets[self.turn].add(chess.PAWN)
         else:
@@ -747,30 +750,35 @@ class CrazyhouseBoard(chess.Board):
     def is_pseudo_legal(self, move: chess.Move) -> bool:
         if move.drop and move.from_square == move.to_square:
             return (
-                move.drop != chess.KING and
-                not chess.BB_SQUARES[move.to_square] & self.occupied and
-                not (move.drop == chess.PAWN and chess.BB_SQUARES[move.to_square] & chess.BB_BACKRANKS) and
-                self.pockets[self.turn].count(move.drop) > 0)
+                    move.drop != chess.KING and
+                    not chess.BB_SQUARES[move.to_square] & self.occupied and
+                    not (move.drop == chess.PAWN and chess.BB_SQUARES[move.to_square] & chess.BB_BACKRANKS) and
+                    self.pockets[self.turn].count(move.drop) > 0)
         else:
             return super().is_pseudo_legal(move)
 
     def is_legal(self, move: chess.Move) -> bool:
         if move.drop:
-            return self.is_pseudo_legal(move) and bool(self.legal_drop_squares_mask() & chess.BB_SQUARES[move.to_square])
+            return self.is_pseudo_legal(move) and bool(
+                self.legal_drop_squares_mask() & chess.BB_SQUARES[move.to_square])
         else:
             return super().is_legal(move)
 
-    def generate_pseudo_legal_drops(self, to_mask: chess.Bitboard = chess.BB_ALL, virtual_pocket: Optional[CrazyhousePocket] = None) -> Iterator[chess.Move]:
+    def generate_pseudo_legal_drops(self, to_mask: chess.Bitboard = chess.BB_ALL,
+                                    virtual_pocket: Optional[CrazyhousePocket] = None) -> Iterator[chess.Move]:
         pocket = self.pockets[self.turn] if virtual_pocket is None else virtual_pocket
         for to_square in chess.scan_forward(to_mask & ~self.occupied):
             for pt, count in pocket.pieces.items():
                 if count and (pt != chess.PAWN or not chess.BB_BACKRANKS & chess.BB_SQUARES[to_square]):
                     yield chess.Move(to_square, to_square, drop=pt)
 
-    def generate_legal_drops(self, to_mask: chess.Bitboard = chess.BB_ALL, virtual_pocket: Optional[CrazyhousePocket] = None) -> Iterator[chess.Move]:
-        return self.generate_pseudo_legal_drops(to_mask=self.legal_drop_squares_mask() & to_mask, virtual_pocket=virtual_pocket)
+    def generate_legal_drops(self, to_mask: chess.Bitboard = chess.BB_ALL,
+                             virtual_pocket: Optional[CrazyhousePocket] = None) -> Iterator[chess.Move]:
+        return self.generate_pseudo_legal_drops(to_mask=self.legal_drop_squares_mask() & to_mask,
+                                                virtual_pocket=virtual_pocket)
 
-    def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+    def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> \
+    Iterator[chess.Move]:
         return itertools.chain(
             super().generate_legal_moves(from_mask, to_mask),
             self.generate_legal_drops(from_mask & to_mask))
@@ -792,13 +800,13 @@ class CrazyhouseBoard(chess.Board):
         # implement anyway. Note that bishops can be captured and put onto
         # a different color complex.
         return (
-            chess.popcount(self.occupied) + sum(len(pocket) for pocket in self.pockets) <= 3 and
-            not self.pawns and
-            not self.rooks and
-            not self.queens and
-            not any(pocket.count(chess.PAWN) for pocket in self.pockets) and
-            not any(pocket.count(chess.ROOK) for pocket in self.pockets) and
-            not any(pocket.count(chess.QUEEN) for pocket in self.pockets))
+                chess.popcount(self.occupied) + sum(len(pocket) for pocket in self.pockets) <= 3 and
+                not self.pawns and
+                not self.rooks and
+                not self.queens and
+                not any(pocket.count(chess.PAWN) for pocket in self.pockets) and
+                not any(pocket.count(chess.ROOK) for pocket in self.pockets) and
+                not any(pocket.count(chess.QUEEN) for pocket in self.pockets))
 
     def set_fen(self, fen: str) -> None:
         position_part, info_part = fen.split(None, 1)
@@ -829,10 +837,12 @@ class CrazyhouseBoard(chess.Board):
             promoted = True
         return super().board_fen(promoted=promoted)
 
-    def epd(self, shredder: bool = False, en_passant: str = "legal", promoted: Optional[bool] = None, **operations: Union[None, str, int, float, chess.Move, Iterable[chess.Move]]) -> str:
+    def epd(self, shredder: bool = False, en_passant: str = "legal", promoted: Optional[bool] = None,
+            **operations: Union[None, str, int, float, chess.Move, Iterable[chess.Move]]) -> str:
         epd = super().epd(shredder=shredder, en_passant=en_passant, promoted=promoted)
         board_part, info_part = epd.split(" ", 1)
-        return "{}[{}{}] {}".format(board_part, str(self.pockets[chess.WHITE]).upper(), str(self.pockets[chess.BLACK]), info_part)
+        return "{}[{}{}] {}".format(board_part, str(self.pockets[chess.WHITE]).upper(), str(self.pockets[chess.BLACK]),
+                                    info_part)
 
     def copy(self: CrazyhouseBoardT, stack: Union[bool, int] = True) -> CrazyhouseBoardT:
         board = super().copy(stack=stack)
@@ -849,7 +859,8 @@ class CrazyhouseBoard(chess.Board):
     def status(self) -> chess.Status:
         status = super().status()
 
-        if chess.popcount(self.pawns) + self.pockets[chess.WHITE].count(chess.PAWN) + self.pockets[chess.BLACK].count(chess.PAWN) <= 16:
+        if chess.popcount(self.pawns) + self.pockets[chess.WHITE].count(chess.PAWN) + self.pockets[chess.BLACK].count(
+                chess.PAWN) <= 16:
             status &= ~chess.STATUS_TOO_MANY_BLACK_PAWNS
             status &= ~chess.STATUS_TOO_MANY_WHITE_PAWNS
 
@@ -920,7 +931,8 @@ class SingleBughouseBoard(CrazyhouseBoard):
         """
         return super().is_checkmate()
 
-    def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+    def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> \
+    Iterator[chess.Move]:
         board_index = self.board_index
         for move in super().generate_legal_moves(from_mask, to_mask):
             move.board_id = board_index
@@ -949,7 +961,7 @@ class BughouseBoards:
     uci_variant = "bughouse"
     xboard_variant = "bughouse"
     starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/ w KQkq - 0 1 | " \
-                    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/ w KQkq - 0 1"
+                   "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/ w KQkq - 0 1"
 
     tbw_suffix = None
     tbz_suffix = None
@@ -1103,6 +1115,10 @@ class BughouseBoards:
 
     def fullmove_number(self) -> int:
         return self.boards[0].fullmove_number + self.boards[1].fullmove_number
+
+    def is_legal(self, move: chess.Move) -> bool:
+        return self[move.board_id].is_legal(move)
+
 
 VARIANTS = [
     chess.Board,
