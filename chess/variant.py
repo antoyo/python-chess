@@ -887,11 +887,11 @@ class SingleBughouseBoard(CrazyhouseBoard):
         super().push(move)
 
     def push(self, move: chess.Move):
-        move.board_id = self.board_index
+        move.board_id = self.board_id
         self._bughouse_boards.push(move)
 
     def pop(self) -> chess.Move:
-        return self._bughouse_boards.pop(self.board_index)
+        return self._bughouse_boards.pop(self.board_id)
 
     def _pop(self) -> chess.Move:
         pockets = self.pockets
@@ -932,7 +932,7 @@ class SingleBughouseBoard(CrazyhouseBoard):
         return super().is_checkmate()
 
     def _append_board_id(self, move_generator: Iterator[chess.Move]) -> Iterator[chess.Move]:
-        board_index = self.board_index
+        board_index = self.board_id
         for move in move_generator:
             move.board_id = board_index
             yield move
@@ -975,7 +975,7 @@ class SingleBughouseBoard(CrazyhouseBoard):
 
     def parse_san(self, san: str) -> chess.Move:
         move = super().parse_san(san)
-        move.board_id = self.board_index
+        move.board_id = self.board_id
         return move
 
     @property
@@ -983,7 +983,7 @@ class SingleBughouseBoard(CrazyhouseBoard):
         return self._bughouse_boards[int(self._bughouse_boards[0] is self)]
 
     @property
-    def board_index(self):
+    def board_id(self):
         return int(self._bughouse_boards[1] is self)
 
 
