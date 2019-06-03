@@ -931,12 +931,47 @@ class SingleBughouseBoard(CrazyhouseBoard):
         """
         return super().is_checkmate()
 
-    def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> \
-    Iterator[chess.Move]:
+    def _append_board_id(self, move_generator: Iterator[chess.Move]) -> Iterator[chess.Move]:
         board_index = self.board_index
-        for move in super().generate_legal_moves(from_mask, to_mask):
+        for move in move_generator:
             move.board_id = board_index
             yield move
+
+    def generate_pseudo_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL,
+                                    to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+        yield from self._append_board_id(super().generate_pseudo_legal_moves(from_mask, to_mask))
+
+    def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL,
+                                    to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+        yield from self._append_board_id(super().generate_legal_moves(from_mask, to_mask))
+
+    def generate_castling_moves(self, from_mask: chess.Bitboard = chess.BB_ALL,
+                                to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+        yield from self._append_board_id(super().generate_castling_moves(from_mask, to_mask))
+
+    def generate_legal_captures(self, from_mask: chess.Bitboard = chess.BB_ALL,
+                                to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+        yield from self._append_board_id(super().generate_legal_captures(from_mask, to_mask))
+
+    def generate_legal_drops(self, from_mask: chess.Bitboard = chess.BB_ALL,
+                             to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+        yield from self._append_board_id(super().generate_legal_drops(from_mask, to_mask))
+
+    def generate_legal_ep(self, from_mask: chess.Bitboard = chess.BB_ALL,
+                          to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+        yield from self._append_board_id(super().generate_legal_ep(from_mask, to_mask))
+
+    def generate_pseudo_legal_captures(self, from_mask: chess.Bitboard = chess.BB_ALL,
+                                       to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+        yield from self._append_board_id(super().generate_pseudo_legal_captures(from_mask, to_mask))
+
+    def generate_pseudo_legal_drops(self, from_mask: chess.Bitboard = chess.BB_ALL,
+                                    to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+        yield from self._append_board_id(super().generate_pseudo_legal_drops(from_mask, to_mask))
+
+    def generate_pseudo_legal_ep(self, from_mask: chess.Bitboard = chess.BB_ALL,
+                                 to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
+        yield from self._append_board_id(super().generate_pseudo_legal_ep(from_mask, to_mask))
 
     def parse_san(self, san: str) -> chess.Move:
         move = super().parse_san(san)
