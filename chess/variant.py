@@ -1163,6 +1163,14 @@ class BughouseBoards:
     def is_legal(self, move: chess.Move) -> bool:
         return self[move.board_id].is_legal(move)
 
+    def copy(self) -> "BughouseBoards":
+        boards = BughouseBoards()
+        boards._move_stack = copy.copy(self._move_stack)
+        boards._boards = (self._boards[0].copy(), self._boards[1].copy())
+        boards[0]._bughouse_boards = boards
+        boards[1]._bughouse_boards = boards
+        return boards
+
 
 VARIANTS = [
     chess.Board,
