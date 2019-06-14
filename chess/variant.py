@@ -987,6 +987,24 @@ class SingleBughouseBoard(CrazyhouseBoard):
         move.board_id = self.board_id
         return move
 
+    def is_legal(self, move: chess.Move) -> bool:
+        if move.board_id is None:
+            move.board_id = self.board_id
+            output = super().is_legal(move)
+            move.board_id = None
+            return output
+        else:
+            return super().is_legal(move)
+
+    def is_pseudo_legal(self, move: chess.Move) -> bool:
+        if move.board_id is None:
+            move.board_id = self.board_id
+            output = super().is_pseudo_legal(move)
+            move.board_id = None
+            return output
+        else:
+            return super().is_pseudo_legal(move)
+
     @property
     def _other_board(self):
         return self._bughouse_boards[int(self._bughouse_boards[0] is self)]
