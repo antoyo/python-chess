@@ -1117,9 +1117,6 @@ class BughouseBoards:
     def boards(self) -> Tuple[SingleBughouseBoard, SingleBughouseBoard]:
         return self._boards
 
-    def __getitem__(self, value: int) -> SingleBughouseBoard:
-        return self._boards[value]
-
     def _repr_svg_(self):
         import chess.svg
         return chess.svg.bughouse_boards(
@@ -1188,6 +1185,15 @@ class BughouseBoards:
         boards[0]._bughouse_boards = boards
         boards[1]._bughouse_boards = boards
         return boards
+
+    def __getitem__(self, value: int) -> SingleBughouseBoard:
+        return self._boards[value]
+
+    def __len__(self):
+        return len(self._boards)
+
+    def __iter__(self):
+        return self._boards.__iter__()
 
 
 VARIANTS = [
