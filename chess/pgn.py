@@ -996,16 +996,30 @@ class StringExporter(BaseVisitor[str]):
         if self.comments and (self.variations or not self.variation_depth):
             self.write_token("$" + str(nag) + " ")
 
-    def visit_move(self, board: chess.Board, move: chess.Move) -> None:
+    def visit_move(self, board: Union[chess.Board, chess.variant.BughouseBoards], move: chess.Move) -> None:
         if self.variations or not self.variation_depth:
             # Write the move number.
-            if board.turn == chess.WHITE:
-                self.write_token(str(board.fullmove_number) + ". ")
-            elif self.force_movenumber:
-                self.write_token(str(board.fullmove_number) + "... ")
+            if isinstance(board, chess.variant.BughouseBoards):
+                board = board.boards[move.board_id]
+                if board.board_id == chess.variant.BOARD_A:
+                    if board.turn == 0:
+                        player = 'a'
+                    else:
+                        player = 'A'
+                else:
+                    if board.turn == 0:
+                        player = 'b'
+                    else:
+                        player = 'B'
+                self.write_token(str(board.fullmove_number) + player + ". " + board.san(move) + "{" + str(move.move_time) + "} ")
 
-            # Write the SAN.
-            self.write_token(board.san(move) + " ")
+            else:
+                if board.turn == chess.WHITE:
+                    self.write_token(str(board.fullmove_number) + ". ")
+                elif self.force_movenumber:
+                    self.write_token(str(board.fullmove_number) + "... ")
+                # Write the SAN.
+                self.write_token(board.san(move) + " ")
 
             self.force_movenumber = False
 
