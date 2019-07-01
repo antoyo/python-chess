@@ -486,8 +486,7 @@ class Move:
                 self.to_square == other.to_square and
                 self.promotion == other.promotion and
                 self.drop == other.drop and
-                self.board_id == other.board_id and
-                self.move_time == other.move_time
+                self.board_id == other.board_id
             )
         else:
             return NotImplemented
@@ -502,10 +501,10 @@ class Move:
             return "B{} {}".format(self.board_id + 1, self.uci())
 
     def __hash__(self) -> int:
-        return hash((self.to_square, self.from_square, self.promotion, self.drop, self.board_id, self.move_time))
+        return hash((self.to_square, self.from_square, self.promotion, self.drop, self.board_id))
 
     def __copy__(self) -> "Move":
-        return type(self)(self.from_square, self.to_square, self.promotion, self.drop, self.board_id, self.move_time)
+        return type(self)(self.from_square, self.to_square, self.promotion, self.drop, self.board_id)
 
     def __deepcopy__(self, memo: Dict[int, object]) -> "Move":
         move = self.__copy__()
@@ -1910,7 +1909,8 @@ class Board(BaseBoard):
         """
         # Push move and remember board state.
         move = self._to_chess960(move)
-        self.move_stack.append(self._from_chess960(self.chess960, move.from_square, move.to_square, move.promotion, move.drop))
+        self.move_stack.append(self._from_chess960(self.chess960, move.from_square, move.to_square, move.promotion,
+                                                   move.drop, move.board_id, move.move_time))
         self._stack.append(self._board_state())
         self._transposition_counter[self._transposition_key()] += 1
 
@@ -3279,7 +3279,9 @@ class Board(BaseBoard):
                     self._castling_uncovers_rank_attack(rook, king_to)):
                 yield self._from_chess960(self.chess960, msb(king), candidate)
 
-    def _from_chess960(self, chess960: bool, from_square: Square, to_square: Square, promotion: Optional[PieceType] = None, drop: Optional[PieceType] = None) -> Move:
+    def _from_chess960(self, chess960: bool, from_square: Square, to_square: Square,
+                       promotion: Optional[PieceType] = None, drop: Optional[PieceType] = None,
+                       board_id: Optional[int] = None, move_time: Optional[float] = None) -> Move:
         if not chess960 and promotion is None and drop is None:
             if from_square == E1 and self.kings & BB_E1:
                 if to_square == H1:
@@ -3292,7 +3294,7 @@ class Board(BaseBoard):
                 elif to_square == A8:
                     return Move(E8, C8)
 
-        return Move(from_square, to_square, promotion, drop)
+        return Move(from_square, to_square, promotion, drop, board_id, move_time)
 
     def _to_chess960(self, move: Move) -> Move:
         if move.from_square == E1 and self.kings & BB_E1:
