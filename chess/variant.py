@@ -1030,14 +1030,14 @@ class BughouseBoards:
     tbw_magic = None
     tbz_magic = None
 
-    def __init__(self, fen: Optional[str] = starting_fen, chess960: bool = False) -> None:
+    def __init__(self, fen: Optional[str] = None, chess960: bool = False) -> None:
         """
 
         :param fen:
         :param chess960: not yet implemented
         """
         self._boards: Optional[Tuple[SingleBughouseBoard, SingleBughouseBoard]] = None
-        self.fen = fen
+        self.fen = self.starting_fen if fen is None else fen
         self._move_stack: List[chess.Move] = []
         self.chess960 = chess960
 
