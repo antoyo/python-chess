@@ -24,6 +24,8 @@ import itertools
 
 from typing import Dict, Generic, Hashable, Iterable, Iterator, List, Optional, Type, TypeVar, Union, Tuple
 
+from chess.variant import BughouseBoards
+
 
 class SuicideBoard(chess.Board):
     aliases = ["Suicide", "Suicide chess"]
@@ -1030,7 +1032,7 @@ class BughouseBoards:
     tbw_magic = None
     tbz_magic = None
 
-    def __init__(self, fen: Optional[str] = None, chess960: bool = False) -> None:
+    def __init__(self, fen: Optional[str] = None, chess960: bool = False):
         """
 
         :param fen:
@@ -1203,7 +1205,13 @@ class BughouseBoards:
 
     def __iter__(self):
         return self._boards.__iter__()
-    
+
+    def root(self) -> BughouseBoards:
+        """Returns a copy of the root position."""
+        board = type(self)(None, chess960=self.chess960)
+        board._boards = [b.root() for b in self]
+        return board
+
     @property
     def move_stack(self) -> List[chess.Move]:
         return self._move_stack
