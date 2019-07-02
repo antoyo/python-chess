@@ -436,7 +436,7 @@ class Game(GameNode):
         """
         return self.headers.board()
 
-    def setup(self, board: Union[chess.Board, str]) -> None:
+    def setup(self, board: Union[chess.Board, chess.variant.BughouseBoards, str]) -> None:
         """
         Sets up a specific starting position. This sets (or resets) the
         ``FEN``, ``SetUp``, and ``Variant`` header tags.
@@ -486,6 +486,14 @@ class Game(GameNode):
         visitor.end_game()
         return visitor.result()
 
+    def from_bughouse_boards(board: chess.variant.BughouseBoards) -> GameT:
+        game = Game.without_tag_roster()
+        game.setup(board.root())
+        node = game
+        for move in board.move_stack:
+            node.add_variation(move)
+        game.headers["Result"] = board.result()
+        return game
     @classmethod
     def from_board(cls: Type[GameT], board: chess.Board) -> GameT:
         """Creates a game from the move stack of a :class:`~chess.Board()`."""

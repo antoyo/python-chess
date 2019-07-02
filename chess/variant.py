@@ -15,14 +15,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-from collections import defaultdict
-from typing import DefaultDict, NamedTuple
-
-import chess
 import copy
 import itertools
-
+from collections import defaultdict
+from typing import DefaultDict
 from typing import Dict, Generic, Hashable, Iterable, Iterator, List, Optional, Type, TypeVar, Union, Tuple
+
+import chess
 
 
 class SuicideBoard(chess.Board):
@@ -107,7 +106,7 @@ class SuicideBoard(chess.Board):
             yield move
 
     def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> \
-    Iterator[chess.Move]:
+            Iterator[chess.Move]:
         if self.is_variant_end():
             return
 
@@ -302,7 +301,7 @@ class AtomicBoard(chess.Board):
         return not self.is_variant_loss() and super().is_stalemate()
 
     def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> \
-    Iterator[chess.Move]:
+            Iterator[chess.Move]:
         for move in self.generate_pseudo_legal_moves(from_mask, to_mask):
             if self.is_legal(move):
                 yield move
@@ -367,7 +366,7 @@ class RacingKingsBoard(chess.Board):
         return super().is_legal(move) and not self._gives_check(move)
 
     def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> \
-    Iterator[chess.Move]:
+            Iterator[chess.Move]:
         for move in super().generate_legal_moves(from_mask, to_mask):
             if not self._gives_check(move):
                 yield move
@@ -774,7 +773,7 @@ class CrazyhouseBoard(chess.Board):
         return self.generate_pseudo_legal_drops(to_mask=self.legal_drop_squares_mask() & to_mask)
 
     def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL, to_mask: chess.Bitboard = chess.BB_ALL) -> \
-    Iterator[chess.Move]:
+            Iterator[chess.Move]:
         return itertools.chain(
             super().generate_legal_moves(from_mask, to_mask),
             self.generate_legal_drops(from_mask & to_mask))
@@ -1023,8 +1022,8 @@ class BughouseBoards:
     aliases = ["Bughouse"]
     uci_variant = "bughouse"
     xboard_variant = "bughouse"
-    starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/ w KQkq - 0 1 | " \
-                   "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/ w KQkq - 0 1"
+    starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR[] w KQkq - 0 1 | " \
+                   "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR[] w KQkq - 0 1"
 
     tbw_suffix = None
     tbz_suffix = None
