@@ -868,9 +868,10 @@ class CrazyhouseBoard(chess.Board):
 
 
 class SingleBughouseBoard(CrazyhouseBoard):
-    def __init__(self, bughouse_boards: "BughouseBoards", fen: Optional[str] = CrazyhouseBoard.starting_fen) -> None:
+    def __init__(self, bughouse_boards: "BughouseBoards", fen: Optional[str] = CrazyhouseBoard.starting_fen,
+                 chess960: bool = False) -> None:
         self._bughouse_boards = bughouse_boards
-        super().__init__(fen)
+        super().__init__(fen, chess960=chess960)
 
     def _push_capture(self, move: chess.Move, capture_square: chess.Square, piece_type: chess.PieceType,
                       was_promoted: bool) -> None:
