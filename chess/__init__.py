@@ -23,6 +23,8 @@ Syzygy tablebase probing and XBoard/UCI engine communication.
 """
 from typing import Counter
 
+from docutils.utils.math.latex2mathml import mover
+
 __author__ = "Niklas Fiekas"
 
 __email__ = "niklas.fiekas@backscattering.de"
@@ -3285,28 +3287,28 @@ class Board(BaseBoard):
         if not chess960 and promotion is None and drop is None:
             if from_square == E1 and self.kings & BB_E1:
                 if to_square == H1:
-                    return Move(E1, G1)
+                    return Move(E1, G1, board_id=board_id, move_time=move_time)
                 elif to_square == A1:
-                    return Move(E1, C1)
+                    return Move(E1, C1, board_id=board_id, move_time=move_time)
             elif from_square == E8 and self.kings & BB_E8:
                 if to_square == H8:
-                    return Move(E8, G8)
+                    return Move(E8, G8, board_id=board_id, move_time=move_time)
                 elif to_square == A8:
-                    return Move(E8, C8)
+                    return Move(E8, C8, board_id=board_id, move_time=move_time)
 
         return Move(from_square, to_square, promotion, drop, board_id, move_time)
 
     def _to_chess960(self, move: Move) -> Move:
         if move.from_square == E1 and self.kings & BB_E1:
             if move.to_square == G1 and not self.rooks & BB_G1:
-                return Move(E1, H1)
+                return Move(E1, H1, board_id=move.board_id, move_time=move.move_time)
             elif move.to_square == C1 and not self.rooks & BB_C1:
-                return Move(E1, A1)
+                return Move(E1, A1, board_id=move.board_id, move_time=move.move_time)
         elif move.from_square == E8 and self.kings & BB_E8:
             if move.to_square == G8 and not self.rooks & BB_G8:
-                return Move(E8, H8)
+                return Move(E8, H8, board_id=move.board_id, move_time=move.move_time)
             elif move.to_square == C8 and not self.rooks & BB_C8:
-                return Move(E8, A8)
+                return Move(E8, A8, board_id=move.board_id, move_time=move.move_time)
 
         return move
 
