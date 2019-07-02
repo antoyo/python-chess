@@ -1038,7 +1038,7 @@ class BughouseBoards:
         :param chess960: not yet implemented
         """
         self._boards: Optional[Tuple[SingleBughouseBoard, SingleBughouseBoard]] = None
-        self.fen = self.starting_fen if fen is None else fen
+        self.set_fen(self.starting_fen if fen is None else fen)
         self._move_stack: List[chess.Move] = []
         self.chess960 = chess960
 
@@ -1050,12 +1050,10 @@ class BughouseBoards:
         for b in self._boards:
             b.clear_board()
 
-    @property
     def fen(self) -> str:
         return "{} | {}".format(self._boards[LEFT].fen(), self._boards[RIGHT].fen())
 
-    @fen.setter
-    def fen(self, value: str):
+    def set_fen(self, value: str):
         fen_split = value.split("|")
         assert len(fen_split) == 2, "fen corrupt"
         self._boards = (SingleBughouseBoard(self, fen_split[0]), SingleBughouseBoard(self, fen_split[1]))
