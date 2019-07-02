@@ -488,7 +488,13 @@ class Game(GameNode):
 
     @classmethod
     def from_bughouse_boards(cls, boards: chess.variant.BughouseBoards) -> GameT:
-        game = Game.without_tag_roster()
+        game = cls()
+        del game.headers["Black"]
+        del game.headers["White"]
+        game.headers["WhiteA"] = "?"
+        game.headers["WhiteB"] = "?"
+        game.headers["BlackA"] = "?"
+        game.headers["BlackB"] = "?"
         game.setup(boards.root())
         node = game
         for move in boards.move_stack:
