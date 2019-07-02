@@ -1079,15 +1079,6 @@ class BughouseBoards:
         self._boards[move.board_id]._pop()
         return move
 
-    def root(self: chess.BoardT) -> chess.BoardT:
-        """Returns a copy of the root position."""
-        if self._stack:
-            board = type(self)(None, chess960=self.chess960)
-            self._stack[0].restore(board)
-            return board
-        else:
-            return self.copy(stack=False)
-
     def peek(self) -> Optional[chess.Move]:
         if len(self._move_stack) == 0:
             return None
