@@ -1194,6 +1194,10 @@ class BughouseBoards:
 
     def __iter__(self):
         return self._boards.__iter__()
+    
+    @property
+    def move_stack(self) -> List[chess.Move]:
+        return self._move_stack
 
 
 VARIANTS = [
