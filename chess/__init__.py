@@ -23,8 +23,6 @@ Syzygy tablebase probing and XBoard/UCI engine communication.
 """
 from typing import Counter
 
-from docutils.utils.math.latex2mathml import mover
-
 __author__ = "Niklas Fiekas"
 
 __email__ = "niklas.fiekas@backscattering.de"
