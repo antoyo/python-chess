@@ -17,8 +17,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 import copy
 import itertools
-from collections import defaultdict
-from typing import DefaultDict
+from collections import defaultdict, OrderedDict
+from typing import DefaultDict, Sequence
 from typing import Dict, Generic, Hashable, Iterable, Iterator, List, Optional, Type, TypeVar, Union, Tuple
 
 import chess
@@ -101,7 +101,7 @@ class SuicideBoard(chess.Board):
         for move in super().generate_pseudo_legal_moves(from_mask, to_mask):
             # Add king promotions.
             if move.promotion == chess.QUEEN:
-                yield chess.Move(move.from_square, move.to_square, chess.KING)
+                yield chess.Move(move.from_square, move.to_square, chess.KING, board_id=self._board_id)
 
             yield move
 
@@ -631,10 +631,11 @@ CrazyhousePocketT = TypeVar("CrazyhousePocketT", bound="CrazyhousePocket")
 
 class CrazyhousePocket:
     def __init__(self, color: bool, symbols: Iterable[str] = "") -> None:
-        self.pieces = defaultdict(lambda: 0)  # type: DefaultDict[chess.PieceType, int]
+        symbols = list(symbols)
+        self.pieces = OrderedDict(
+            [(p, symbols.count(chess.PIECE_SYMBOLS[p])) for p in chess.PIECE_TYPES]
+        )
         self._color = color
-        for symbol in symbols:
-            self.add(chess.PIECE_SYMBOLS.index(symbol))
 
     def add(self, pt: chess.PieceType) -> None:
         self.pieces[pt] += 1
@@ -682,9 +683,9 @@ class CrazyhouseBoard(chess.Board):
     tbw_magic = None
     tbz_magic = None
 
-    def __init__(self, fen: Optional[str] = starting_fen, chess960: bool = False) -> None:
+    def __init__(self, fen: Optional[str] = starting_fen, chess960: bool = False, board_id: Optional[int] = None):
         self.pockets = [CrazyhousePocket(chess.BLACK), CrazyhousePocket(chess.WHITE)]
-        super().__init__(fen, chess960=chess960)
+        super().__init__(fen, chess960=chess960, board_id=board_id)
 
     def reset_board(self) -> None:
         super().reset_board()
@@ -725,9 +726,8 @@ class CrazyhouseBoard(chess.Board):
                     castling_rights & chess.BB_SQUARES[move.to_square])
 
     def _transposition_key(self) -> Hashable:
-        return (super()._transposition_key(),
-                self.promoted,
-                str(self.pockets[chess.WHITE]), str(self.pockets[chess.BLACK]))
+        return super()._transposition_key(), self.promoted, \
+               tuple(self.pockets[chess.WHITE].pieces.values()), tuple(self.pockets[chess.BLACK].pieces.values())
 
     def legal_drop_squares_mask(self) -> chess.Bitboard:
         king = self.king(self.turn)
@@ -767,7 +767,7 @@ class CrazyhouseBoard(chess.Board):
         for to_square in chess.scan_forward(to_mask & ~self.occupied):
             for pt, count in self.pockets[self.turn].pieces.items():
                 if count and (pt != chess.PAWN or not chess.BB_BACKRANKS & chess.BB_SQUARES[to_square]):
-                    yield chess.Move(to_square, to_square, drop=pt)
+                    yield chess.Move(to_square, to_square, drop=pt, board_id=self.board_id)
 
     def generate_legal_drops(self, to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
         return self.generate_pseudo_legal_drops(to_mask=self.legal_drop_squares_mask() & to_mask)
@@ -867,10 +867,10 @@ class CrazyhouseBoard(chess.Board):
 
 
 class SingleBughouseBoard(CrazyhouseBoard):
-    def __init__(self, bughouse_boards: "BughouseBoards", fen: Optional[str] = CrazyhouseBoard.starting_fen,
-                 chess960: bool = False) -> None:
+    def __init__(self, bughouse_boards: "BughouseBoards", board_id: int,
+                 fen: Optional[str] = CrazyhouseBoard.starting_fen, chess960: bool = False) -> None:
         self._bughouse_boards = bughouse_boards
-        super().__init__(fen, chess960=chess960)
+        super().__init__(fen, chess960=chess960, board_id=board_id)
 
     def _push_capture(self, move: chess.Move, capture_square: chess.Square, piece_type: chess.PieceType,
                       was_promoted: bool) -> None:
@@ -927,20 +927,6 @@ class SingleBughouseBoard(CrazyhouseBoard):
         """
         return super().is_checkmate()
 
-    def _append_board_id(self, move_generator: Iterator[chess.Move]) -> Iterator[chess.Move]:
-        board_index = self.board_id
-        for move in move_generator:
-            move.board_id = board_index
-            yield move
-
-    def generate_pseudo_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL,
-                                    to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
-        yield from self._append_board_id(super().generate_pseudo_legal_moves(from_mask, to_mask))
-
-    def generate_pseudo_legal_ep(self, from_mask: chess.Bitboard = chess.BB_ALL,
-                                 to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
-        yield from self._append_board_id(super().generate_pseudo_legal_ep(from_mask, to_mask))
-
     def _generate_pseudo_legal_drops_vp(self, to_mask: chess.Bitboard = chess.BB_ALL,
                                         virtual_pocket: Optional[CrazyhousePocket] = None) -> Iterator[chess.Move]:
         pocket = self.pockets[self.turn] if virtual_pocket is None else virtual_pocket
@@ -957,10 +943,6 @@ class SingleBughouseBoard(CrazyhouseBoard):
                              virtual_pocket: Optional[CrazyhousePocket] = None) -> Iterator[chess.Move]:
         yield from self._generate_pseudo_legal_drops_vp(to_mask=self.legal_drop_squares_mask() & to_mask,
                                                         virtual_pocket=virtual_pocket)
-
-    def _generate_evasions(self, king: chess.Square, checkers: chess.Bitboard, from_mask: chess.Bitboard = chess.BB_ALL,
-                           to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
-        yield from self._append_board_id(super()._generate_evasions(king, checkers, from_mask, to_mask))
 
     def parse_san(self, san: str) -> chess.Move:
         move = super().parse_san(san)
@@ -987,11 +969,7 @@ class SingleBughouseBoard(CrazyhouseBoard):
 
     @property
     def _other_board(self):
-        return self._bughouse_boards[int(self._bughouse_boards[0] is self)]
-
-    @property
-    def board_id(self):
-        return int(self._bughouse_boards[1] is self)
+        return self._bughouse_boards[int(not self.board_id)]
 
 
 TEAMS = [BOTTOM, TOP] = [TEAM_A, TEAM_B] = [0, 1]
@@ -1035,7 +1013,7 @@ class BughouseBoards:
     def set_fen(self, value: str):
         fen_split = value.split("|")
         assert len(fen_split) == 2, "fen corrupt"
-        self._boards = (SingleBughouseBoard(self, fen_split[0]), SingleBughouseBoard(self, fen_split[1]))
+        self._boards = (SingleBughouseBoard(self, 0, fen_split[0]), SingleBughouseBoard(self, 1, fen_split[1]))
 
     def push(self, move: chess.Move):
         self._boards[move.board_id]._push(move)
