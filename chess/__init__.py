@@ -1378,7 +1378,8 @@ class Board(BaseBoard):
     one_king = True
     captures_compulsory = False
 
-    def __init__(self: BoardT, fen: Optional[str] = STARTING_FEN, *, chess960: bool = False) -> None:
+    def __init__(self: BoardT, fen: Optional[str] = STARTING_FEN, *, chess960: bool = False,
+                 board_id: Optional[int] = None) -> None:
         BaseBoard.__init__(self, None)
 
         self.chess960 = chess960
@@ -1387,6 +1388,7 @@ class Board(BaseBoard):
         self.move_stack = []  # type: List[Move]
         self._stack = []  # type: List[_BoardState[BoardT]]
         self._transposition_counter = collections.Counter()  # type: Counter[Hashable]
+        self._board_id = board_id
 
         if fen is None:
             self.clear()
@@ -1394,6 +1396,10 @@ class Board(BaseBoard):
             self.reset()
         else:
             self.set_fen(fen)
+
+    @property
+    def board_id(self) -> Optional[int]:
+        return self._board_id
 
     @property
     def pseudo_legal_moves(self) -> "PseudoLegalMoveGenerator":
@@ -1471,7 +1477,7 @@ class Board(BaseBoard):
         for from_square in scan_reversed(non_pawns):
             moves = self.attacks_mask(from_square) & ~our_pieces & to_mask
             for to_square in scan_reversed(moves):
-                yield Move(from_square, to_square)
+                yield Move(from_square, to_square, board_id=self._board_id)
 
         # Generate castling moves.
         if from_mask & self.kings:
@@ -1491,12 +1497,12 @@ class Board(BaseBoard):
 
             for to_square in scan_reversed(targets):
                 if square_rank(to_square) in [0, 7]:
-                    yield Move(from_square, to_square, QUEEN)
-                    yield Move(from_square, to_square, ROOK)
-                    yield Move(from_square, to_square, BISHOP)
-                    yield Move(from_square, to_square, KNIGHT)
+                    yield Move(from_square, to_square, QUEEN, board_id=self._board_id)
+                    yield Move(from_square, to_square, ROOK, board_id=self._board_id)
+                    yield Move(from_square, to_square, BISHOP, board_id=self._board_id)
+                    yield Move(from_square, to_square, KNIGHT, board_id=self._board_id)
                 else:
-                    yield Move(from_square, to_square)
+                    yield Move(from_square, to_square, board_id=self._board_id)
 
         # Prepare pawn advance generation.
         if self.turn == WHITE:
@@ -1514,17 +1520,17 @@ class Board(BaseBoard):
             from_square = to_square + (8 if self.turn == BLACK else -8)
 
             if square_rank(to_square) in [0, 7]:
-                yield Move(from_square, to_square, QUEEN)
-                yield Move(from_square, to_square, ROOK)
-                yield Move(from_square, to_square, BISHOP)
-                yield Move(from_square, to_square, KNIGHT)
+                yield Move(from_square, to_square, QUEEN, board_id=self._board_id)
+                yield Move(from_square, to_square, ROOK, board_id=self._board_id)
+                yield Move(from_square, to_square, BISHOP, board_id=self._board_id)
+                yield Move(from_square, to_square, KNIGHT, board_id=self._board_id)
             else:
-                yield Move(from_square, to_square)
+                yield Move(from_square, to_square, board_id=self._board_id)
 
         # Generate double pawn moves.
         for to_square in scan_reversed(double_moves):
             from_square = to_square + (16 if self.turn == BLACK else -16)
-            yield Move(from_square, to_square)
+            yield Move(from_square, to_square, board_id=self._board_id)
 
         # Generate en passant captures.
         if self.ep_square:
@@ -1543,7 +1549,7 @@ class Board(BaseBoard):
             BB_RANKS[4 if self.turn else 3])
 
         for capturer in scan_reversed(capturers):
-            yield Move(capturer, self.ep_square)
+            yield Move(capturer, self.ep_square, board_id=self._board_id)
 
     def generate_pseudo_legal_captures(self, from_mask: Bitboard = BB_ALL, to_mask: Bitboard = BB_ALL) -> Iterator[Move]:
         return itertools.chain(
@@ -1910,7 +1916,7 @@ class Board(BaseBoard):
         # Push move and remember board state.
         move = self._to_chess960(move)
         self.move_stack.append(self._from_chess960(self.chess960, move.from_square, move.to_square, move.promotion,
-                                                   move.drop, move.board_id, move.move_time))
+                                                   move.drop, move.move_time))
         self._stack.append(self._board_state())
         self._transposition_counter[self._transposition_key()] += 1
 
@@ -2546,10 +2552,7 @@ class Board(BaseBoard):
 
         # Drops.
         if move.drop:
-            san = ""
-            if move.drop != PAWN:
-                san = piece_symbol(move.drop).upper()
-            san += "@" + SQUARE_NAMES[move.to_square]
+            san = "@" + SQUARE_NAMES[move.to_square]
 
         # Castling.
         if self.is_castling(move):
@@ -3179,7 +3182,7 @@ class Board(BaseBoard):
 
         if BB_SQUARES[king] & from_mask:
             for to_square in scan_reversed(BB_KING_ATTACKS[king] & ~self.occupied_co[self.turn] & ~attacked & to_mask):
-                yield Move(king, to_square)
+                yield Move(king, to_square, board_id=self._board_id)
 
         checker = msb(checkers)
         if BB_SQUARES[checker] == checkers:
@@ -3281,20 +3284,20 @@ class Board(BaseBoard):
 
     def _from_chess960(self, chess960: bool, from_square: Square, to_square: Square,
                        promotion: Optional[PieceType] = None, drop: Optional[PieceType] = None,
-                       board_id: Optional[int] = None, move_time: Optional[float] = None) -> Move:
+                       move_time: Optional[float] = None) -> Move:
         if not chess960 and promotion is None and drop is None:
             if from_square == E1 and self.kings & BB_E1:
                 if to_square == H1:
-                    return Move(E1, G1, board_id=board_id, move_time=move_time)
+                    return Move(E1, G1, board_id=self.board_id, move_time=move_time)
                 elif to_square == A1:
-                    return Move(E1, C1, board_id=board_id, move_time=move_time)
+                    return Move(E1, C1, board_id=self.board_id, move_time=move_time)
             elif from_square == E8 and self.kings & BB_E8:
                 if to_square == H8:
-                    return Move(E8, G8, board_id=board_id, move_time=move_time)
+                    return Move(E8, G8, board_id=self.board_id, move_time=move_time)
                 elif to_square == A8:
-                    return Move(E8, C8, board_id=board_id, move_time=move_time)
+                    return Move(E8, C8, board_id=self.board_id, move_time=move_time)
 
-        return Move(from_square, to_square, promotion, drop, board_id, move_time)
+        return Move(from_square, to_square, promotion, drop, self.board_id, move_time)
 
     def _to_chess960(self, move: Move) -> Move:
         if move.from_square == E1 and self.kings & BB_E1:
