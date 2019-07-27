@@ -647,7 +647,7 @@ class CrazyhousePocket:
         return self.pieces[piece_type]
 
     def reset(self) -> None:
-        self.pieces.clear()
+        self.pieces = OrderedDict([(p, 0) for p in chess.PIECE_TYPES])
 
     def __str__(self) -> str:
         return "".join(chess.piece_symbol(pt) * self.count(pt) for pt in reversed(chess.PIECE_TYPES))
