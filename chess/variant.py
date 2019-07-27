@@ -937,26 +937,6 @@ class SingleBughouseBoard(CrazyhouseBoard):
                                     to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
         yield from self._append_board_id(super().generate_pseudo_legal_moves(from_mask, to_mask))
 
-    def generate_legal_moves(self, from_mask: chess.Bitboard = chess.BB_ALL,
-                             to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
-        yield from self._append_board_id(super().generate_legal_moves(from_mask, to_mask))
-
-    def generate_castling_moves(self, from_mask: chess.Bitboard = chess.BB_ALL,
-                                to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
-        yield from self._append_board_id(super().generate_castling_moves(from_mask, to_mask))
-
-    def generate_legal_captures(self, from_mask: chess.Bitboard = chess.BB_ALL,
-                                to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
-        yield from self._append_board_id(super().generate_legal_captures(from_mask, to_mask))
-
-    def generate_legal_ep(self, from_mask: chess.Bitboard = chess.BB_ALL,
-                          to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
-        yield from self._append_board_id(super().generate_legal_ep(from_mask, to_mask))
-
-    def generate_pseudo_legal_captures(self, from_mask: chess.Bitboard = chess.BB_ALL,
-                                       to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
-        yield from self._append_board_id(super().generate_pseudo_legal_captures(from_mask, to_mask))
-
     def generate_pseudo_legal_ep(self, from_mask: chess.Bitboard = chess.BB_ALL,
                                  to_mask: chess.Bitboard = chess.BB_ALL) -> Iterator[chess.Move]:
         yield from self._append_board_id(super().generate_pseudo_legal_ep(from_mask, to_mask))
@@ -967,7 +947,7 @@ class SingleBughouseBoard(CrazyhouseBoard):
         for to_square in chess.scan_forward(to_mask & ~self.occupied):
             for pt, count in pocket.pieces.items():
                 if count and (pt != chess.PAWN or not chess.BB_BACKRANKS & chess.BB_SQUARES[to_square]):
-                    yield chess.Move(to_square, to_square, drop=pt)
+                    yield chess.Move(to_square, to_square, drop=pt, board_id=self.board_id)
 
     def generate_pseudo_legal_drops(self, to_mask: chess.Bitboard = chess.BB_ALL,
                                     virtual_pocket: Optional[CrazyhousePocket] = None) -> Iterator[chess.Move]:
