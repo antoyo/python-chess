@@ -866,10 +866,30 @@ class CrazyhouseBoard(chess.Board):
         return status
 
 
+SingleBughouseBoardT = TypeVar("SingleBughouseBoardT", bound="SingleBughouseBoard")
+
+
+class _SingleBughouseBoardState(Generic[SingleBughouseBoardT], chess._BoardState["SingleBughouseBoardT"]):
+    def __init__(self, board: "CrazyhouseBoardT", disable_pocket_saving: bool = False) -> None:
+        super().__init__(board)
+        if not disable_pocket_saving:
+            self.pockets_w = board.pockets[chess.WHITE].copy()
+            self.pockets_b = board.pockets[chess.BLACK].copy()
+        else:
+            self.pockets_b = self.pockets_w = None
+
+    def restore(self, board: "CrazyhouseBoardT", restore_pockets: bool = True) -> None:
+        super().restore(board)
+        if self.pockets_b is not None and restore_pockets:
+            board.pockets[chess.WHITE] = self.pockets_w.copy()
+            board.pockets[chess.BLACK] = self.pockets_b.copy()
+
+
 class SingleBughouseBoard(CrazyhouseBoard):
     def __init__(self, bughouse_boards: "BughouseBoards", board_id: int,
                  fen: Optional[str] = CrazyhouseBoard.starting_fen, chess960: bool = False) -> None:
         self._bughouse_boards = bughouse_boards
+        self.disable_pocket_saving = False
         super().__init__(fen, chess960=chess960, board_id=board_id)
 
     def _push_capture(self, move: chess.Move, capture_square: chess.Square, piece_type: chess.PieceType,
@@ -889,12 +909,13 @@ class SingleBughouseBoard(CrazyhouseBoard):
     def pop(self) -> chess.Move:
         return self._bughouse_boards.pop(self.board_id)
 
+    def _board_state(self: SingleBughouseBoardT) -> _SingleBughouseBoardState[SingleBughouseBoardT]:
+        return _SingleBughouseBoardState(self, self.disable_pocket_saving)
+
     def _pop(self) -> chess.Move:
         pockets = self.pockets
         move = self.move_stack.pop()
-        # "Hacky" is an understatement for what is going on in this line
-        # We need this in order to avoid that the pockets will be restored
-        super(_CrazyhouseBoardState, self._stack.pop()).restore(self)
+        self._stack.pop().restore(self, restore_pockets=False)
         self._transposition_counter[self._transposition_key()] -= 1
         captured_piece = self.piece_at(move.to_square)
         if captured_piece is not None:
@@ -1160,6 +1181,15 @@ class BughouseBoards:
     @property
     def move_stack(self) -> List[chess.Move]:
         return self._move_stack
+
+    @property
+    def disable_pocket_saving(self) -> bool:
+        return any(b.disable_pocket_saving for b in self.boards)
+
+    @disable_pocket_saving.setter
+    def disable_pocket_saving(self, value: bool):
+        for b in self.boards:
+            b.disable_pocket_saving = value
 
 
 VARIANTS = [
