@@ -931,8 +931,8 @@ class SingleBughouseBoard(CrazyhouseBoard):
 
     def is_checkmate(self) -> bool:
         if super().is_checkmate():
-            if self._other_board.turn != self.turn and self._other_board.is_temporary_checkmate():
-                return True
+            # if self._other_board.turn != self.turn and self._other_board.is_temporary_checkmate():
+            #     return True
             potential_pocket = CrazyhousePocket(self.turn)
             potential_pocket.pieces = {p: 1 for p in chess.PIECE_TYPES[:-1]}
 
