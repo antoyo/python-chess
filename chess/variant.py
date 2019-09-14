@@ -913,20 +913,25 @@ class SingleBughouseBoard(CrazyhouseBoard):
         return _SingleBughouseBoardState(self, self.disable_pocket_saving)
 
     def _pop(self) -> chess.Move:
+        captured_piece_type = None
         pockets = self.pockets
         move = self.move_stack.pop()
         self._stack.pop().restore(self, restore_pockets=False)
         self._transposition_counter[self._transposition_key()] -= 1
-        captured_piece = self.piece_at(move.to_square)
-        if captured_piece is not None:
-            partner_pocket = self._other_board.pockets[captured_piece.color]
-            was_promoted = bool(self.promoted & chess.BB_SQUARES[move.to_square])
-            piece_type = captured_piece.piece_type if not was_promoted else chess.PAWN
-            if partner_pocket.count(piece_type) == 0:
-                raise ValueError("Cannot undo move, please undo move on other bord first.")
-            partner_pocket.remove(piece_type)
         if move.drop is not None:
             pockets[self.turn].add(move.drop)
+        elif self.is_en_passant(move):
+            captured_piece_type = chess.PAWN
+        else:
+            captured_piece = self.piece_at(move.to_square)
+            if captured_piece is not None:
+                was_promoted = bool(self.promoted & chess.BB_SQUARES[move.to_square])
+                captured_piece_type = captured_piece.piece_type if not was_promoted else chess.PAWN
+        if captured_piece_type is not None:
+            partner_pocket = self._other_board.pockets[int(not self.turn)]
+            if partner_pocket.count(captured_piece_type) == 0:
+                raise ValueError("Cannot undo move, please undo move on other board first.")
+            partner_pocket.remove(captured_piece_type)
         return move
 
     def is_checkmate(self) -> bool:
