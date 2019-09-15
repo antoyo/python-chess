@@ -1029,6 +1029,10 @@ class BughouseBoards:
         for b in self._boards:
             b.reset_board()
 
+    def reset(self) -> None:
+        for b in self._boards:
+            b.reset()
+
     def clear_boards(self) -> None:
         for b in self._boards:
             b.clear_board()
