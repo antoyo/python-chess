@@ -72,7 +72,7 @@ def read_description():
 
 
 setuptools.setup(
-    name="python-chess",
+    name="python-chess-bughouse",
     version=chess.__version__,
     author=chess.__author__,
     author_email=chess.__email__,
@@ -80,7 +80,7 @@ setuptools.setup(
     long_description=read_description(),
     long_description_content_type="text/x-rst",
     license="GPL-3.0+",
-    keywords="chess fen epd pgn polyglot syzygy gaviota uci xboard",
+    keywords="chess fen epd pgn polyglot syzygy gaviota uci xboard bughouse",
     url="https://github.com/niklasf/python-chess",
     packages=["chess"],
     test_suite="test",
