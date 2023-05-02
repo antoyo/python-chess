@@ -25,7 +25,7 @@ from typing import Callable, Dict, Generic, Iterable, Iterator, List, Mapping, M
     TypeVar, Optional, Union
 
 import chess
-from chess.variant import BughouseBoards
+from chess.variant import BughouseBoards, LEFT
 
 LOGGER = logging.getLogger(__name__)
 
@@ -408,8 +408,9 @@ class GameNode:
             type(self).__name__,
             id(self),
             self.parent.board().fullmove_number,
-            "." if self.parent.board().turn == chess.WHITE else "...",
-            self.san())
+            ".",
+            # TODO: show SAN moves instead of board.
+            self.parent.board().boards[LEFT])
 
 
 GameT = TypeVar("GameT", bound="Game")

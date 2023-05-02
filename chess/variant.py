@@ -886,7 +886,7 @@ class _SingleBughouseBoardState(Generic[SingleBughouseBoardT], chess._BoardState
 
 
 class SingleBughouseBoard(CrazyhouseBoard):
-    def __init__(self, bughouse_boards: "BughouseBoards", board_id: int,
+    def __init__(self, bughouse_boards: "BughouseBoards", board_id: int = 0,
                  fen: Optional[str] = CrazyhouseBoard.starting_fen, chess960: bool = False) -> None:
         self._bughouse_boards = bughouse_boards
         self.disable_pocket_saving = False
@@ -908,6 +908,11 @@ class SingleBughouseBoard(CrazyhouseBoard):
 
     def pop(self) -> chess.Move:
         return self._bughouse_boards.pop(self.board_id)
+
+    def copy(self: SingleBughouseBoardT, stack: Union[bool, int] = True) -> SingleBughouseBoardT:
+        board = super().copy(stack=stack)
+        board._board_id = self.board_id
+        return board
 
     def _board_state(self: SingleBughouseBoardT) -> _SingleBughouseBoardState[SingleBughouseBoardT]:
         return _SingleBughouseBoardState(self, self.disable_pocket_saving)
