@@ -27,7 +27,7 @@ __author__ = "Niklas Fiekas"
 
 __email__ = "niklas.fiekas@backscattering.de"
 
-__version__ = "0.27.3"
+__version__ = "0.28.0"
 
 import collections
 import copy
@@ -2552,7 +2552,10 @@ class Board(BaseBoard):
 
         # Drops.
         if move.drop:
-            san = "@" + SQUARE_NAMES[move.to_square]
+            san = ""
+            if move.drop != PAWN:
+                san = piece_symbol(move.drop).upper()
+            san += "@" + SQUARE_NAMES[move.to_square]
 
         # Castling.
         if self.is_castling(move):
