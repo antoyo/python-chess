@@ -3870,6 +3870,28 @@ class CrazyhouseTestCase(unittest.TestCase):
         self.assertEqual(str(board.copy().root().pockets[chess.WHITE]), white_pocket)
         self.assertEqual(str(board.copy().root().pockets[chess.BLACK]), black_pocket)
 
+    def test_bughouse_zobrist_hash(self):
+        promoted_queen = chess.variant.CrazyhouseBoard("r1b2k1Q~/ppp2pp1/2n1p1p1/8/3P3n/4Bb2/P1P1nPPP/R4R1K[] b - - 0 23")
+        natural_queen = chess.variant.CrazyhouseBoard("r1b2k1Q/ppp2pp1/2n1p1p1/8/3P3n/4Bb2/P1P1nPPP/R4R1K[] b - - 0 23")
+        self.assertEqual(chess.variant.bughouse_zobrist_hash(promoted_queen), 16737518909379970299)
+        self.assertEqual(chess.variant.bughouse_zobrist_hash(natural_queen), 10843111524270035604)
+        self.assertEqual(chess.variant.bughouse_zobrist_hash(natural_queen), chess.polyglot.zobrist_hash(natural_queen))
+
+        both_promoted = chess.variant.CrazyhouseBoard("r1b2k1Q~/ppp2pp1/2n1p1p1/3q~4/3P3n/4Bb2/P1P1nPPP/R4R1K[] b - - 0 23")
+        none_promoted = chess.variant.CrazyhouseBoard("r1b2k1Q/ppp2pp1/2n1p1p1/3q4/3P3n/4Bb2/P1P1nPPP/R4R1K[] b - - 0 23")
+        self.assertEqual(chess.variant.bughouse_zobrist_hash(both_promoted), 866028476280630888)
+        self.assertEqual(chess.variant.bughouse_zobrist_hash(none_promoted), 3413691917650558311)
+
+        with_pockets = chess.variant.CrazyhouseBoard("r1b2k1Q~/ppp2pp1/2n1p1p1/8/3P3n/4Bb2/P1P1nPPP/R4R1K[QNpp] b - - 0 23")
+        self.assertEqual(chess.variant.bughouse_zobrist_hash(with_pockets), chess.variant.bughouse_zobrist_hash(promoted_queen))
+
+    def test_bughouse_zobrist_hash_after_promotion(self):
+        board = chess.variant.CrazyhouseBoard("8/P6k/8/8/8/8/8/K7[] w - - 0 1")
+        board.push_san("a8=Q")
+        expected = chess.variant.CrazyhouseBoard("Q~7/7k/8/8/8/8/8/K7[] b - - 0 1")
+        self.assertEqual(chess.variant.bughouse_zobrist_hash(board), chess.variant.bughouse_zobrist_hash(expected))
+        self.assertNotEqual(chess.variant.bughouse_zobrist_hash(board), chess.polyglot.zobrist_hash(board))
+
 
 class GiveawayTestCase(unittest.TestCase):
 
